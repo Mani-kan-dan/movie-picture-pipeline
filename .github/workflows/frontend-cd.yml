@@ -59,8 +59,7 @@ jobs:
         with:
           context: starter/frontend
           push: true
-          tags: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$
-{{ github.sha }}
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           build-args: |
             REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }}
   deploy:
@@ -77,16 +76,13 @@ jobs:
         run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
       - name: Install kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/
-install_kustomize.sh" | bash
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/kustomize
       - id: ecr
-        run: echo "registry=$(aws sts get-caller-identity --query Account --output 
-text).dkr.ecr.$AWS_REGION.amazonaws.com" >> "$GITHUB_OUTPUT"
+        run: echo "registry=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_REGION.amazonaws.com" >> "$GITHUB_OUTPUT"
       - name: Update image
         working-directory: starter/frontend/k8s
-        run: kustomize edit set image frontend=${{ steps.ecr.outputs.registry }}/$
-{{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        run: kustomize edit set image frontend=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
       - name: Deploy
         working-directory: starter/frontend/k8s
         run: kustomize build | kubectl apply -f -
